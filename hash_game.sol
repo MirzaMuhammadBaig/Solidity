@@ -17,7 +17,7 @@ contract GuessGame {
     }
 
     bytes32 public answer =
-        0x063013b39cc5e4a19e9ace4dd77100f8c5748105409d6f28aa5a40e8132b33f5;
+        0x065748105409d6f28aa5a40e8132b33f53013b39cc5e4a19e9ace4dd77100f8c;
 
     function guess(string memory _word) public view returns (bool) {
         return keccak256(abi.encodePacked(_word)) == answer;

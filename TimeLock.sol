@@ -1,33 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+contract timeLock{
 
-contract Muhammad_Token is ERC20, Ownable {
+    uint public timePeriod ;
+    uint public totalSupply;
+    uint public amountOfToken;
+    uint public stuckamountOfToken;
+    address public owner = msg.sender;
+    string public TokenSymbol = "MMB";
+    string public TokenName = "Muhammad";
 
-    using SafeMath for uint256;
+    mapping(address => uint) public balanceOf;
+    mapping(address=>uint) public minterAddress;
 
-    uint256 public token;
-    uint public timePeriod = 300;
-    uint public immutable totalTime;
-    uint256 public lockedAmountofToken;
-    uint public currentTime = block.timestamp;
+    error PleaseWaitTillCurrentUserFree();
 
-    constructor() ERC20("Muhammad_Token", "MMB") {
-        totalTime = block.timestamp + timePeriod; 
+    function mint(uint amount) external {
+        if(timePeriod < block.timestamp){
+        require(msg.sender != owner,"You can't can this function");
+        totalSupply += amount;
+        amountOfToken = amount -= 30%amount;
+        stuckamountOfToken += 30%amount;
+        balanceOf[msg.sender] += amountOfToken;
+        address payable minter = payable(msg.sender);
+        minter.transfer(minterAddress[msg.sender]);
+        minterAddress[msg.sender] += amountOfToken;
+        timePeriod =  block.timestamp + 1 minutes;
+        }else{
+            revert PleaseWaitTillCurrentUserFree();
+        }
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
-            lockedAmountofToken  = 3000/amount ; 
-            token = amount - lockedAmountofToken;
-            _mint(to, token);    
-    }
-
-    function releaseLockedToken(address to) public {
-        require(block.timestamp > totalTime, "Your locked time is not end yet");
-            _mint(to, lockedAmountofToken); 
+    function claim () external {
+        require(minterAddress[msg.sender] > 0,"You must be minter");
+        require(timePeriod < block.timestamp,"Time remaining");
+        amountOfToken = amountOfToken + stuckamountOfToken;
+        minterAddress[msg.sender] += stuckamountOfToken;
+        balanceOf[msg.sender] += stuckamountOfToken;
+        stuckamountOfToken -= stuckamountOfToken;
     }
 }
